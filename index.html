@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MyConversation</title>
+    <link rel="stylesheet" href="./lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="./css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="./MyConversation_FE.styles.css" asp-append-version="true" />
+
+    <script src="./lib/jquery/dist/jquery.min.js"></script>
+    <script src="./lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./js/site.js" asp-append-version="true"></script>
+    <script src="./js/signalr/dist/browser/signalr.js"></script>
+    <script src="./js/chat.js"></script>
+    <style>
+        .choose-index {
+            background-color: azure;
+        }
+        .loader {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            z-index: 9999;
+            width: 120px;
+            height: 120px;
+            margin: -76px 0 0 -76px;
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            -webkit-animation: spin 2s linear infinite;
+            animation: spin 2s linear infinite;
+        }
+        
+        /* Safari */
+        @-webkit-keyframes spin {
+          0% { -webkit-transform: rotate(0deg); }
+          100% { -webkit-transform: rotate(360deg); }
+        }
+        
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .logged-in {
+            color: green;
+        }
+
+        .logged-out {
+            color: red;
+        }
+
+        #messagesList{
+            font-size: 12px;
+        }
+
+        #messagesList li{
+            padding: 4px;
+        }
+    </style>
+</head>
+<body>
+    <audio src="sound/notifications-sound.mp3" type="audio/ogg" id="soundMessage"></audio>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">MyConversation_FE</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div id="section-loader" style="height: 100%; width: 100%; display: none; position: absolute; z-index: 9999;">
+        <div class="loader"></div>
+    </div>
+    <div id="container" class="container">
+        <main role="main" class="pb-3">
+            <div class="container">
+                <div class="row p-1">
+                    <div class="col-12"><span style="font-weight:bold; padding-right: 10px" id="username"></span><button class="btn btn-primary" onclick="logout()">Logout</button></div>
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="row p-1">
+                            <div class="col-2">Message</div>
+                            <div class="col-10"><input type="text" class="w-100" id="messageInput" /></div>
+                            <div class="col-12"><i id="notiMessage" style="color:red"></i></div>
+                        </div>
+                        <div class="row p-1">
+                            <div class="col-12 text-end">
+                                <input type="button" id="sendButton" value="Send Message" />
+                            </div>
+                        </div>
+                        <div class="row p-1">
+                            <div class="col-12 text-end">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <td>Index</td>
+                                            <td>Name</td>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="listUser">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div div class="col-6">
+                        <div class="col-12">
+                            <hr />
+                            <h5 id="conversationName"></h5>
+                        </div>
+                        <div class="col-12" style="max-height: 300px; overflow: auto; word-wrap: break-word">
+                            <ul id="messagesList"></ul>
+                        </div>
+                    </div>
+                </div>
+                <div hidden id="token"></div>
+            </div>
+            <div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="loginModalLabel">Login</h5>
+                  </div>
+                  <div class="modal-body">
+                    <div class="row p-1">
+                        <div class="col-4"><b>Username: </b> </div>
+                        <div class="col-8"><input id="usernameLogin" type="text"/></div>
+                    </div>
+                    <div class="row p-1">
+                        <div class="col-4"><b>Password: </b> </div>
+                        <div class="col-8"><input id="passwordLogin" type="password"/></div>
+                    </div>
+                    <div><i id="notiLogin" style="color:red"></i></div>
+                  </div>
+                  <div class="modal-footer">
+                    <button onclick="login()" type="button" class="btn btn-primary">Login</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2023 - MyConversation - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+</body>
+</html>
